@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ product.name }} - Spare Parts Marketplace</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      .product-image {
+        max-height: 400px;
+        object-fit: contain;
+        width: 100%;
+      }
+      .seller-info {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+      }
+      .availability {
+        font-size: 1.1rem;
+      }
+      .eta-info {
+        font-size: 0.9rem;
+        color: #6c757d;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5 mb-5">
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div
+        class="alert alert-{{ category }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
+
+      <div class="row">
+        <!-- Product Image -->
+        <div class="col-md-6 mb-4">
+          {% if product.image %}
+          <img
+            src="{{ url_for('static', filename=product.image) }}"
+            alt="{{ product.name }}"
+            class="product-image"
+          />
+          {% else %}
+          <div
+            class="bg-light d-flex align-items-center justify-content-center product-image"
+          >
+            <i class="fas fa-image fa-3x text-muted"></i>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Product Details -->
+        <div class="col-md-6">
+          <h1 class="mb-3">{{ product.name }}</h1>
+
+          <div class="mb-3">
+            <span class="h3 text-primary"
+              >₹{{ "%.2f"|format(product.price) }}</span
+            >
+            <span class="text-muted ms-2">inclusive of all taxes</span>
+          </div>
+
+          <div class="mb-3 availability">
+            {% if product.stock > 0 %}
+            <span class="text-success">
+              <i class="fas fa-check-circle me-1"></i> In Stock ({{
+              product.stock }} available)
+            </span>
+            {% else %}
+            <span class="text-danger">
+              <i class="fas fa-times-circle me-1"></i> Out of Stock
+            </span>
+            {% endif %}
+          </div>
+
+          <div class="mb-3 eta-info">
+            <i class="fas fa-truck me-1"></i>
+            Estimated Delivery: {{ product.eta }} day{% if product.eta != 1
+            %}s{% endif %}
+          </div>
+
+          <div class="mb-4">
+            <p>
+              <strong>Category:</strong>
+              {% if product.category == 'bike' %}
+              <span class="badge bg-info">Bike Parts</span>
+              {% else %}
+              <span class="badge bg-secondary">Car Parts</span>
+              {% endif %}
+            </p>
+            <p><strong>Description:</strong></p>
+            <div>{{ product.description }}</div>
+          </div>
+
+          {% if session.get('role') == 'buyer' and product.stock > 0 %}
+          <a
+            href="{{ url_for('add_to_cart', product_id=product.id) }}"
+            class="btn btn-primary btn-lg"
+          >
+            <i class="fas fa-cart-plus me-2"></i>Add to Cart
+          </a>
+          {% endif %}
+
+          <a
+            href="{{ url_for('index') }}"
+            class="btn btn-outline-secondary ms-2"
+          >
+            <i class="fas fa-arrow-left me-1"></i>Continue Shopping
+          </a>
+
+          <!-- Seller Information -->
+          <div class="seller-info mt-4">
+            <h5><i class="fas fa-store me-2"></i>Seller Information</h5>
+            <p>
+              <strong>{{ seller.name }}</strong><br />
+              <small class="text-muted">
+                <i class="fas fa-phone me-1"></i>{{ seller.phone }}<br />
+                <i class="fas fa-envelope me-1"></i>{{ seller.email }}
+              </small>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Information -->
+      <div class="mt-5">
+        <ul class="nav nav-tabs mb-3">
+          <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="tab" href="#details"
+              >Product Details</a
+            >
+          </li>
+          <!-- Add more tabs here if needed in the future (e.g., Reviews) -->
+        </ul>
+
+        <div class="tab-content">
+          <div class="tab-pane fade show active" id="details">
+            <div class="card">
+              <div class="card-body">
+                <dl class="row mb-0">
+                  <dt class="col-sm-3">Added On:</dt>
+                  <dd class="col-sm-9">
+                    {{ product.created_at.strftime('%d %b, %Y') }}
+                  </dd>
+
+                  <dt class="col-sm-3">Category:</dt>
+                  <dd class="col-sm-9">
+                    {{ product.category|capitalize }} Parts
+                  </dd>
+
+                  <dt class="col-sm-3">Stock:</dt>
+                  <dd class="col-sm-9">{{ product.stock }} units</dd>
+
+                  <dt class="col-sm-3">ETA:</dt>
+                  <dd class="col-sm-9">
+                    {{ product.eta }} day{% if product.eta != 1 %}s{% endif %}
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

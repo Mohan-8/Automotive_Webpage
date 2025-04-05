@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Spare Parts Marketplace</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .nav-pills .nav-link.active {
+            background-color: #0d6efd;
+        }
+        .stats-card {
+            transition: transform 0.3s;
+        }
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        .user-table img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .approval-actions .btn {
+            transition: all 0.2s;
+        }
+        .approval-actions .btn:hover {
+            transform: scale(1.05);
+        }
+        .status-badge {
+            font-size: 0.85rem;
+            padding: 0.35em 0.65em;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse" style="min-height: 100vh;">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h5 class="fw-bold text-primary">Admin Dashboard</h5>
+                        <p class="text-muted small mb-0">Spare Parts Marketplace</p>
+                    </div>
+                    <hr>
+                    <ul class="nav flex-column nav-pills">
+                        <li class="nav-item">
+                            <a class="nav-link active d-flex align-items-center" href="#overview" data-bs-toggle="tab">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Overview
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center" href="#pending-approvals" data-bs-toggle="tab">
+                                <i class="fas fa-user-check me-2"></i>
+                                Pending Approvals
+                                {% if pending_sellers|length > 0 %}
+                                <span class="badge bg-danger ms-auto">{{ pending_sellers|length }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center" href="#users" data-bs-toggle="tab">
+                                <i class="fas fa-users me-2"></i>
+                                Manage Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link d-flex align-items-center" href="#queries" data-bs-toggle="tab">
+                                <i class="fas fa-question-circle me-2"></i>
+                                Customer Queries
+                                {% set open_queries = queries|selectattr('status', 'equalto', 'open')|list %}
+                                {% if open_queries|length > 0 %}
+                                <span class="badge bg-danger ms-auto">{{ open_queries|length }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                    </ul>
+                    <hr>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link text-danger d-flex align-items-center" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Logout
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark d-flex align-items-center" href="{{ url_for('index') }}">
+                                <i class="fas fa-home me-2"></i>
+                                Visit Website
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-9 col-lg-10 ms-sm-auto px-md-4">
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1>Welcome, {{ user.name }}</h1>
+                    <div>
+                        <a href="{{ url_for('change_password') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-key me-1"></i> Change Password
+                        </a>
+                    </div>
+                </div>
+
+                <div class="tab-content">
+                    <!-- Overview Tab -->
+                    <div class="tab-pane fade show active" id="overview">
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h4>Dashboard Overview</h4>
+                                <p class="text-muted">Summary of marketplace activities and statistics</p>
+                            </div>
+                        </div>
+
+                        <!-- Stats Cards -->
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6 col-lg-3">
+                                <div class="card stats-card text-white bg-primary">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="card-title">Total Sellers</h6>
+                                                <h2 class="mb-0">{{ all_users|selectattr('role', 'equalto', 'seller')|list|length }}</h2>
+                                            </div>
+                                            <i class="fas fa-store fa-3x opacity-50"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <div class="card stats-card text-white bg-success">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="card-title">Total Buyers</h6>
+                                                <h2 class="mb-0">{{ all_users|selectattr('role', 'equalto', 'buyer')|list|length }}</h2>
+                                            </div>
+                                            <i class="fas fa-user fa-3x opacity-50"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <div class="card stats-card text-white bg-warning">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="card-title">Pending Approvals</h6>
+                                                <h2 class="mb-0">{{ pending_sellers|length }}</h2>
+                                            </div>
+                                            <i class="fas fa-user-clock fa-3x opacity-50"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6 col-lg-3">
+                                <div class="card stats-card text-white bg-danger">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="card-title">Open Queries</h6>
+                                                <h2 class="mb-0">{{ queries|selectattr('status', 'equalto', 'open')|list|length }}</h2>
+                                            </div>
+                                            <i class="fas fa-question-circle fa-3x opacity-50"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Activities Section (placeholder) -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0"><i class="fas fa-chart-line me-2"></i>Marketplace Activity</h5>
+                            </div>
+                            <div class="card-body">
+                                <p class="text-muted text-center py-5">
+                                    <i class="fas fa-chart-bar fa-3x mb-3 d-block"></i>
+                                    Activity charts and analytics would be displayed here<br>
+                                    This feature can be implemented in future updates
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pending Approvals Tab -->
+                    <div class="tab-pane fade" id="pending-approvals">
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h4>Pending Seller Approvals</h4>
+                                <p class="text-muted">Review and manage seller registration requests</p>
+                            </div>
+                        </div>
+
+                        {% if pending_sellers|length == 0 %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> No pending seller approvals at the moment.
+                        </div>
+                        {% else %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Shop Details</th>
+                                        <th>Owner Details</th>
+                                        <th>Category</th>
+                                        <th>Documents</th>
+                                        <th class="text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for seller_info in pending_sellers %}
+                                    {% set seller = seller_info.user %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <strong>{{ seller_info.shop_name }}</strong><br>
+                                            <small class="text-muted">{{ seller_info.shop_address }}</small>
+                                        </td>
+                                        <td>
+                                            <strong>{{ seller.name }}</strong><br>
+                                            <small class="text-muted">{{ seller.phone }} | {{ seller.email }}</small>
+                                        </td>
+                                        <td>
+                                            {% if seller_info.category == 'bike' %}
+                                                <span class="badge bg-info">Bike Parts</span>
+                                            {% elif seller_info.category == 'car' %}
+                                                <span class="badge bg-secondary">Car Parts</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">Both</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="small">
+                                                <strong>GSTIN:</strong> {{ seller_info.gstin }}<br>
+                                                <strong>PAN:</strong> {{ seller_info.pan_number }}
+                                            </div>
+                                        </td>
+                                        <td class="text-center approval-actions">
+                                            <a href="{{ url_for('approve_seller', seller_info_id=seller_info.id) }}" 
+                                               class="btn btn-sm btn-success me-1" 
+                                               onclick="return confirm('Are you sure you want to approve this seller?');">
+                                                <i class="fas fa-check me-1"></i> Approve
+                                            </a>
+                                            <a href="{{ url_for('reject_seller', seller_info_id=seller_info.id) }}" 
+                                               class="btn btn-sm btn-danger" 
+                                               onclick="return confirm('Are you sure you want to reject this seller? This will remove their account.');">
+                                                <i class="fas fa-times me-1"></i> Reject
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Users Tab -->
+                    <div class="tab-pane fade" id="users">
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <h4>User Management</h4>
+                                <p class="text-muted">View and manage all registered users</p>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="userSearch" placeholder="Search users...">
+                                    <button class="btn btn-outline-secondary" type="button">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Tabs -->
+                        <ul class="nav nav-tabs mb-3">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="all-users-tab" data-bs-toggle="tab" href="#all-users">All Users</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="sellers-tab" data-bs-toggle="tab" href="#sellers">Sellers</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="buyers-tab" data-bs-toggle="tab" href="#buyers">Buyers</a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <!-- All Users Tab -->
+                            <div class="tab-pane fade show active" id="all-users">
+                                <div class="table-responsive">
+                                    <table class="table table-hover user-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Name</th>
+                                                <th>Contact</th>
+                                                <th>Role</th>
+                                                <th>Address</th>
+                                                <th class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for user in all_users %}
+                                            <tr>
+                                                <td>{{ loop.index }}</td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="bg-light text-primary d-flex align-items-center justify-content-center me-2" 
+                                                             style="width:40px;height:40px;border-radius:50%;">
+                                                            <i class="fas fa-user"></i>
+                                                        </div>
+                                                        {{ user.name }}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div>{{ user.phone }}</div>
+                                                    <div class="small text-muted">{{ user.email }}</div>
+                                                </td>
+                                                <td>
+                                                    {% if user.role == 'seller' %}
+                                                    <span class="badge bg-primary">Seller</span>
+                                                    {% if user.seller_info and user.seller_info.is_approved %}
+                                                    <span class="badge bg-success">Approved</span>
+                                                    {% else %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                    {% endif %}
+                                                    {% else %}
+                                                    <span class="badge bg-info">Buyer</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <div class="small text-truncate" style="max-width: 200px;">
+                                                        {{ user.address }}
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <a href="{{ url_for('view_user', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye me-1"></i> View
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Sellers Tab -->
+                            <div class="tab-pane fade" id="sellers">
+                                <div class="table-responsive">
+                                    <table class="table table-hover user-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Shop Name</th>
+                                                <th>Owner</th>
+                                                <th>Category</th>
+                                                <th>Status</th>
+                                                <th class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for user in all_users if user.role == 'seller' %}
+                                            {% set seller_info = user.seller_info %}
+                                            <tr>
+                                                <td>{{ loop.index }}</td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="bg-light text-primary d-flex align-items-center justify-content-center me-2" 
+                                                             style="width:40px;height:40px;border-radius:50%;">
+                                                            <i class="fas fa-store"></i>
+                                                        </div>
+                                                        {% if seller_info %}
+                                                        {{ seller_info.shop_name }}
+                                                        {% else %}
+                                                        <span class="text-muted">No shop info</span>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div>{{ user.name }}</div>
+                                                    <div class="small text-muted">{{ user.phone }}</div>
+                                                </td>
+                                                <td>
+                                                    {% if seller_info %}
+                                                    {% if seller_info.category == 'bike' %}
+                                                    <span class="badge bg-info">Bike Parts</span>
+                                                    {% elif seller_info.category == 'car' %}
+                                                    <span class="badge bg-secondary">Car Parts</span>
+                                                    {% else %}
+                                                    <span class="badge bg-primary">Both</span>
+                                                    {% endif %}
+                                                    {% else %}
+                                                    <span class="badge bg-light text-dark">Unknown</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if seller_info and seller_info.is_approved %}
+                                                    <span class="badge bg-success">Approved</span>
+                                                    {% else %}
+                                                    <span class="badge bg-warning">Pending</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    <a href="{{ url_for('view_user', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye me-1"></i> View
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Buyers Tab -->
+                            <div class="tab-pane fade" id="buyers">
+                                <div class="table-responsive">
+                                    <table class="table table-hover user-table">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Name</th>
+                                                <th>Contact</th>
+                                                <th>Address</th>
+                                                <th class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for user in all_users if user.role == 'buyer' %}
+                                            <tr>
+                                                <td>{{ loop.index }}</td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="bg-light text-info d-flex align-items-center justify-content-center me-2" 
+                                                             style="width:40px;height:40px;border-radius:50%;">
+                                                            <i class="fas fa-user"></i>
+                                                        </div>
+                                                        {{ user.name }}
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div>{{ user.phone }}</div>
+                                                    <div class="small text-muted">{{ user.email }}</div>
+                                                </td>
+                                                <td>
+                                                    <div class="small text-truncate" style="max-width: 200px;">
+                                                        {{ user.address }}
+                                                    </div>
+                                                </td>
+                                                <td class="text-center">
+                                                    <a href="{{ url_for('view_user', user_id=user.id) }}" class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye me-1"></i> View
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Queries Tab -->
+                    <div class="tab-pane fade" id="queries">
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <h4>Customer Queries</h4>
+                                <p class="text-muted">Manage and respond to customer inquiries</p>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="querySearch" placeholder="Search queries...">
+                                    <button class="btn btn-outline-secondary" type="button">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Query Status Tabs -->
+                        <ul class="nav nav-tabs mb-3">
+                            <li class="nav-item">
+                                <a class="nav-link active" id="all-queries-tab" data-bs-toggle="tab" href="#all-queries">All Queries</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="open-queries-tab" data-bs-toggle="tab" href="#open-queries">
+                                    Open
+                                    {% set open_queries = queries|selectattr('status', 'equalto', 'open')|list %}
+                                    {% if open_queries|length > 0 %}
+                                    <span class="badge bg-danger">{{ open_queries|length }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="in-progress-queries-tab" data-bs-toggle="tab" href="#in-progress-queries">In Progress</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" id="resolved-queries-tab" data-bs-toggle="tab" href="#resolved-queries">Resolved</a>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content">
+                            <!-- All Queries Tab -->
+                            <div class="tab-pane fade show active" id="all-queries">
+                                {% if queries|length == 0 %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i> No queries have been submitted yet.
+                                </div>
+                                {% else %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Subject</th>
+                                                <th>From</th>
+                                                <th>Date</th>
+                                                <th>Status</th>
+                                                <th class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for query in queries %}
+                                            <tr>
+                                                <td>{{ loop.index }}</td>
+                                                <td>{{ query.subject }}</td>
+                                                <td>
+                                                    {% set query_user = all_users|selectattr('id', 'equalto', query.user_id)|first %}
+                                                    {% if query_user %}
+                                                    <div>{{ query_user.name }}</div>
+                                                    <div class="small text-muted">{{ query_user.role|capitalize }}</div>
+                                                    {% else %}
+                                                    <span class="text-muted">Unknown user</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ query.created_at.strftime('%d %b, %Y') }}</td>
+                                                <td>
+                                                    {% if query.status == 'open' %}
+                                                    <span class="badge bg-danger status-badge">Open</span>
+                                                    {% elif query.status == 'in_progress' %}
+                                                    <span class="badge bg-warning status-badge">In Progress</span>
+                                                    {% else %}
+                                                    <span class="badge bg-success status-badge">Resolved</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#queryModal{{ query.id }}">
+                                                        <i class="fas fa-eye me-1"></i> View
+                                                    </button>
+                                                </td>
+                                            </tr>
+
+                                            <!-- Query Modal for each query -->
+                                            <div class="modal fade" id="queryModal{{ query.id }}" tabindex="-1" aria-hidden="true">
+                                                <div class="modal-dialog modal-lg">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title">
+                                                                {% if query.status == 'open' %}
+                                                                <span class="badge bg-danger me-2">Open</span>
+                                                                {% elif query.status == 'in_progress' %}
+                                                                <span class="badge bg-warning me-2">In Progress</span>
+                                                                {% else %}
+                                                                <span class="badge bg-success me-2">Resolved</span>
+                                                                {% endif %}
+                                                                {{ query.subject }}
+                                                            </h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            {% set query_user = all_users|selectattr('id', 'equalto', query.user_id)|first %}
+                                                            <div class="mb-3">
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <div>
+                                                                        <span class="fw-bold">From:</span> 
+                                                                        {% if query_user %}
+                                                                        {{ query_user.name }} ({{ query_user.role|capitalize }})
+                                                                        {% else %}
+                                                                        Unknown user
+                                                                        {% endif %}
+                                                                    </div>
+                                                                    <div>
+                                                                        <span class="text-muted">{{ query.created_at.strftime('%d %b, %Y %H:%M') }}</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="card mb-3">
+                                                                <div class="card-body">
+                                                                    <p class="mb-0">{{ query.message }}</p>
+                                                                </div>
+                                                            </div>
+                                                            <hr>
+                                                            <h6>Update Status</h6>
+                                                            <form action="{{ url_for('update_query', query_id=query.id) }}" method="post">
+                                                                <div class="mb-3">
+                                                                    <select name="status" class="form-select">
+                                                                        <option value="open" {% if query.status == 'open' %}selected{% endif %}>Open</option>
+                                                                        <option value="in_progress" {% if query.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                                                                        <option value="resolved" {% if query.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <textarea class="form-control" rows="3" placeholder="Add a note or response (future feature)"></textarea>
+                                                                </div>
+                                                                <div class="d-flex justify-content-end">
+                                                                    <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Close</button>
+                                                                    <button type="submit" class="btn btn-primary">Update Status</button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Open Queries Tab -->
+                            <div class="tab-pane fade" id="open-queries">
+                                {% set open_queries = queries|selectattr('status', 'equalto', 'open')|list %}
+                                {% if open_queries|length == 0 %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i> No open queries at the moment.
+                                </div>
+                                {% else %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Subject</th>
+                                                <th>From</th>
+                                                <th>Date</th>
+                                                <th class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for query in open_queries %}
+                                            <tr>
+                                                <td>{{ loop.index }}</td>
+                                                <td>{{ query.subject }}</td>
+                                                <td>
+                                                    {% set query_user = all_users|selectattr('id', 'equalto', query.user_id)|first %}
+                                                    {% if query_user %}
+                                                    <div>{{ query_user.name }}</div>
+                                                    <div class="small text-muted">{{ query_user.role|capitalize }}</div>
+                                                    {% else %}
+                                                    <span class="text-muted">Unknown user</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ query.created_at.strftime('%d %b, %Y') }}</td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#queryModal{{ query.id }}">
+                                                        <i class="fas fa-eye me-1"></i> View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- In Progress Queries Tab -->
+                            <div class="tab-pane fade" id="in-progress-queries">
+                                {% set in_progress_queries = queries|selectattr('status', 'equalto', 'in_progress')|list %}
+                                {% if in_progress_queries|length == 0 %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i> No queries in progress at the moment.
+                                </div>
+                                {% else %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Subject</th>
+                                                <th>From</th>
+                                                <th>Date</th>
+                                                <th class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for query in in_progress_queries %}
+                                            <tr>
+                                                <td>{{ loop.index }}</td>
+                                                <td>{{ query.subject }}</td>
+                                                <td>
+                                                    {% set query_user = all_users|selectattr('id', 'equalto', query.user_id)|first %}
+                                                    {% if query_user %}
+                                                    <div>{{ query_user.name }}</div>
+                                                    <div class="small text-muted">{{ query_user.role|capitalize }}</div>
+                                                    {% else %}
+                                                    <span class="text-muted">Unknown user</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ query.created_at.strftime('%d %b, %Y') }}</td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#queryModal{{ query.id }}">
+                                                        <i class="fas fa-eye me-1"></i> View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Resolved Queries Tab -->
+                            <div class="tab-pane fade" id="resolved-queries">
+                                {% set resolved_queries = queries|selectattr('status', 'equalto', 'resolved')|list %}
+                                {% if resolved_queries|length == 0 %}
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i> No resolved queries at the moment.
+                                </div>
+                                {% else %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Subject</th>
+                                                <th>From</th>
+                                                <th>Date</th>
+                                                <th class="text-center">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for query in resolved_queries %}
+                                            <tr>
+                                                <td>{{ loop.index }}</td>
+                                                <td>{{ query.subject }}</td>
+                                                <td>
+                                                    {% set query_user = all_users|selectattr('id', 'equalto', query.user_id)|first %}
+                                                    {% if query_user %}
+                                                    <div>{{ query_user.name }}</div>
+                                                    <div class="small text-muted">{{ query_user.role|capitalize }}</div>
+                                                    {% else %}
+                                                    <span class="text-muted">Unknown user</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ query.created_at.strftime('%d %b, %Y') }}</td>
+                                                <td class="text-center">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#queryModal{{ query.id }}">
+                                                        <i class="fas fa-eye me-1"></i> View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Simple Search Functionality -->
+    <script>
+        document.getElementById('userSearch')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.user-table tbody tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+
+        document.getElementById('querySearch')?.addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('#queries .table tbody tr').forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>

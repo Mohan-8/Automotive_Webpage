@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Shopping Cart - Spare Parts Marketplace</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      .cart-item-img {
+        width: 80px;
+        height: 80px;
+        object-fit: contain;
+      }
+      .quantity-input {
+        width: 70px;
+      }
+      .table-responsive {
+        overflow-x: auto;
+      }
+      .total-section {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5 mb-5">
+      <h2 class="mb-4">
+        <i class="fas fa-shopping-cart me-2"></i>Shopping Cart {% if
+        cart_items|length > 0 %}
+        <span class="badge bg-primary ms-2">{{ cart_items|length }}</span>
+        {% endif %}
+      </h2>
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div
+        class="alert alert-{{ category }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %} {% endif %} {% endwith %} {% if cart_items|length == 0 %}
+      <div class="card text-center py-5">
+        <div class="card-body">
+          <i class="fas fa-cart-arrow-down fa-3x text-muted mb-3"></i>
+          <h4>Your cart is empty</h4>
+          <p class="text-muted">Add some spare parts to get started!</p>
+          <a href="{{ url_for('index') }}" class="btn btn-primary">
+            <i class="fas fa-shopping-bag me-1"></i>Start Shopping
+          </a>
+        </div>
+      </div>
+      {% else %}
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>Product</th>
+              <th>Price</th>
+              <th>Quantity</th>
+              <th>Total</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in cart_items %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  {% if item.product.image %}
+                  <img
+                    src="{{ url_for('static', filename=item.product.image) }}"
+                    alt="{{ item.product.name }}"
+                    class="cart-item-img me-3"
+                  />
+                  {% else %}
+                  <div
+                    class="bg-light d-flex align-items-center justify-content-center cart-item-img me-3"
+                  >
+                    <i class="fas fa-image text-muted"></i>
+                  </div>
+                  {% endif %}
+                  <div>
+                    <a
+                      href="{{ url_for('product_detail', product_id=item.product.id) }}"
+                      class="text-decoration-none"
+                    >
+                      {{ item.product.name }}
+                    </a>
+                    <small class="d-block text-muted">
+                      {% if item.product.category == 'bike' %} Bike Parts {%
+                      else %} Car Parts {% endif %}
+                    </small>
+                  </div>
+                </div>
+              </td>
+              <td>₹{{ "%.2f"|format(item.product.price) }}</td>
+              <td>
+                <form
+                  action="{{ url_for('update_cart', cart_id=item.id) }}"
+                  method="POST"
+                  class="d-inline"
+                >
+                  <input
+                    type="number"
+                    name="quantity"
+                    value="{{ item.quantity }}"
+                    min="1"
+                    max="{{ item.product.stock }}"
+                    class="form-control quantity-input d-inline-block"
+                    onchange="this.form.submit()"
+                  />
+                </form>
+              </td>
+              <td>₹{{ "%.2f"|format(item.product.price * item.quantity) }}</td>
+              <td>
+                <a
+                  href="{{ url_for('remove_from_cart', cart_id=item.id) }}"
+                  class="btn btn-sm btn-danger"
+                  onclick="return confirm('Are you sure you want to remove this item?');"
+                >
+                  <i class="fas fa-trash"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Total and Actions -->
+      <div class="row mt-4">
+        <div class="col-md-6">
+          <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Continue Shopping
+          </a>
+        </div>
+        <div class="col-md-6">
+          <div class="total-section">
+            <h5 class="d-flex justify-content-between">
+              <span>Total:</span>
+              <span>₹{{ "%.2f"|format(total) }}</span>
+            </h5>
+            <hr />
+            <div class="text-end">
+              <a
+                href="{{ url_for('checkout') }}"
+                class="btn btn-primary btn-lg"
+              >
+                <i class="fas fa-check me-1"></i>Proceed to Checkout
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

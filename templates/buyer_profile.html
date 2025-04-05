@@ -1,0 +1,210 @@
+{% extends "base.html" %} {% block title %}My Profile - Spare Parts
+Marketplace{% endblock %} {% block content %}
+<div class="row">
+  <div class="col-md-3">
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Profile</h5>
+      </div>
+      <div class="card-body">
+        <div class="text-center mb-3">
+          <i class="fas fa-user-circle fa-5x text-primary"></i>
+        </div>
+        <h5 class="card-title text-center">{{ user.name }}</h5>
+        <p class="card-text text-center text-muted">Buyer</p>
+        <hr />
+        <p><i class="fas fa-phone me-2"></i> {{ user.phone }}</p>
+        <p><i class="fas fa-envelope me-2"></i> {{ user.email }}</p>
+        <p><i class="fas fa-map-marker-alt me-2"></i> {{ user.address }}</p>
+        <div class="d-grid gap-2 mt-3">
+          <a
+            href="{{ url_for('edit_profile') }}"
+            class="btn btn-outline-primary"
+            >Edit Profile</a
+          >
+          <a
+            href="{{ url_for('change_password') }}"
+            class="btn btn-outline-secondary"
+            >Change Password</a
+          >
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Quick Links</h5>
+      </div>
+      <div class="list-group list-group-flush">
+        <a
+          href="{{ url_for('view_cart') }}"
+          class="list-group-item list-group-item-action"
+        >
+          <i class="fas fa-shopping-cart me-2"></i> My Cart
+          <span class="badge bg-primary float-end"
+            >{{ cart_items|length }}</span
+          >
+        </a>
+        <a
+          href="{{ url_for('view_orders') }}"
+          class="list-group-item list-group-item-action"
+        >
+          <i class="fas fa-box me-2"></i> My Orders
+        </a>
+        <a
+          href="{{ url_for('submit_query') }}"
+          class="list-group-item list-group-item-action"
+        >
+          <i class="fas fa-question-circle me-2"></i> Submit a Query
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-9">
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Browse Products</h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-4">
+          <form action="{{ url_for('search') }}" method="get" class="d-flex">
+            <input
+              type="text"
+              name="query"
+              class="form-control me-2"
+              placeholder="Search for products..."
+            />
+            <button type="submit" class="btn btn-primary">Search</button>
+          </form>
+        </div>
+
+        <h6>Filter by Category:</h6>
+        <div class="mb-3">
+          <a
+            href="{{ url_for('search', category='bike') }}"
+            class="badge category-badge"
+            >Bike Parts</a
+          >
+          <a
+            href="{{ url_for('search', category='car') }}"
+            class="badge category-badge"
+            >Car Parts</a
+          >
+        </div>
+
+        <h5 class="mt-4">Recent Products</h5>
+        <div class="row">
+          {% for product in products[:4] %}
+          <div class="col-md-6 mb-4">
+            <div class="card product-card h-100">
+              {% if product.image %}
+              <img
+                src="{{ url_for('static', filename=product.image) }}"
+                class="card-img-top"
+                alt="{{ product.name }}"
+                style="height: 150px; object-fit: cover"
+              />
+              {% else %}
+              <div class="text-center p-4 bg-light">
+                <i class="fas fa-image fa-3x text-muted"></i>
+              </div>
+              {% endif %}
+              <div class="card-body">
+                <h5 class="card-title">{{ product.name }}</h5>
+                <p class="card-text">
+                  {{ product.description[:100] }}{% if
+                  product.description|length > 100 %}...{% endif %}
+                </p>
+                <div class="d-flex justify-content-between">
+                  <span
+                    class="badge bg-{{ 'success' if product.stock > 0 else 'danger' }}"
+                  >
+                    {{ 'In Stock' if product.stock > 0 else 'Out of Stock' }}
+                  </span>
+                  <span class="badge bg-primary"
+                    >{{ product.category.capitalize() }}</span
+                  >
+                </div>
+                <p class="lead mt-2">₹{{ product.price }}</p>
+                <div class="d-flex">
+                  <a
+                    href="{{ url_for('product_detail', product_id=product.id) }}"
+                    class="btn btn-sm btn-outline-primary me-2"
+                    >View Details</a
+                  >
+                  {% if product.stock > 0 %}
+                  <a
+                    href="{{ url_for('add_to_cart', product_id=product.id) }}"
+                    class="btn btn-sm btn-primary"
+                    >Add to Cart</a
+                  >
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="text-center mt-3">
+          <a href="{{ url_for('search') }}" class="btn btn-outline-primary"
+            >View All Products</a
+          >
+        </div>
+      </div>
+    </div>
+
+    {% if orders %}
+    <div class="card">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Recent Orders</h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Date</th>
+                <th>Items</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in orders[:5] %}
+              <tr>
+                <td>#{{ order.id }}</td>
+                <td>{{ order.order_date.strftime('%d %b %Y') }}</td>
+                <td>{{ order.items|length }} item(s)</td>
+                <td>
+                  <span
+                    class="badge bg-{{ 'success' if order.status == 'delivered' else ('warning' if order.status == 'pending' else 'info') }}"
+                  >
+                    {{ order.status|capitalize }}
+                  </span>
+                </td>
+                <td>
+                  <a
+                    href="{{ url_for('view_order', order_id=order.id) }}"
+                    class="btn btn-sm btn-outline-primary"
+                    >Details</a
+                  >
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% if orders|length > 5 %}
+        <div class="text-center">
+          <a href="{{ url_for('view_orders') }}" class="btn btn-outline-primary"
+            >View All Orders</a
+          >
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

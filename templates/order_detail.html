@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Order #{{ order.id }} Details - Spare Parts Marketplace</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      .order-item-img {
+        width: 60px;
+        height: 60px;
+        object-fit: contain;
+      }
+      .table-responsive {
+        overflow-x: auto;
+      }
+      .status-badge {
+        font-size: 1rem;
+        padding: 0.35em 0.65em;
+      }
+      .order-summary {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5 mb-5">
+      <h2 class="mb-4">
+        <i class="fas fa-box-open me-2"></i>Order #{{ order.id }} Details
+      </h2>
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div
+        class="alert alert-{{ category }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
+
+      <div class="row">
+        <div class="col-md-8">
+          <!-- Order Items -->
+          <div class="card mb-4">
+            <div class="card-header">
+              <h5 class="mb-0">Order Items</h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                  <thead class="table-light">
+                    <tr>
+                      <th>Product</th>
+                      <th>Price</th>
+                      <th>Quantity</th>
+                      <th>Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for item in order.items %}
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          {% if item.product.image %}
+                          <img
+                            src="{{ url_for('static', filename=item.product.image) }}"
+                            alt="{{ item.product.name }}"
+                            class="order-item-img me-3"
+                          />
+                          {% else %}
+                          <div
+                            class="bg-light d-flex align-items-center justify-content-center order-item-img me-3"
+                          >
+                            <i class="fas fa-image text-muted"></i>
+                          </div>
+                          {% endif %}
+                          <div>
+                            <a
+                              href="{{ url_for('product_detail', product_id=item.product.id) }}"
+                              class="text-decoration-none"
+                            >
+                              {{ item.product.name }}
+                            </a>
+                            <small class="d-block text-muted">
+                              {% if item.product.category == 'bike' %} Bike
+                              Parts {% else %} Car Parts {% endif %}
+                            </small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>₹{{ "%.2f"|format(item.price) }}</td>
+                      <td>{{ item.quantity }}</td>
+                      <td>₹{{ "%.2f"|format(item.price * item.quantity) }}</td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <!-- Order Summary -->
+          <div class="order-summary">
+            <h5>Order Summary</h5>
+            <hr />
+            <dl class="row mb-0">
+              <dt class="col-6">Order Date:</dt>
+              <dd class="col-6">
+                {{ order.order_date.strftime('%d %b, %Y %H:%M') }}
+              </dd>
+
+              <dt class="col-6">Status:</dt>
+              <dd class="col-6">
+                {% if order.status == 'pending' %}
+                <span class="badge bg-warning status-badge">Pending</span>
+                {% elif order.status == 'shipped' %}
+                <span class="badge bg-primary status-badge">Shipped</span>
+                {% else %}
+                <span class="badge bg-success status-badge">Delivered</span>
+                {% endif %}
+              </dd>
+
+              <dt class="col-6">Items:</dt>
+              <dd class="col-6">{{ order.items|length }}</dd>
+
+              <dt class="col-6 fw-bold">Total:</dt>
+              {% set order_total = 0 %} {% for item in order.items %} {% set
+              order_total = order_total + (item.price * item.quantity) %} {%
+              endfor %}
+              <dd class="col-6 fw-bold">₹{{ "%.2f"|format(order_total) }}</dd>
+            </dl>
+          </div>
+
+          <!-- Buyer Information (if needed in future) -->
+          <div class="card mt-4">
+            <div class="card-body">
+              <h5>Shipping Information</h5>
+              <p class="mb-0">
+                {% set buyer = order.buyer %} {{ buyer.name }}<br />
+                {{ buyer.address }}<br />
+                <small class="text-muted">
+                  <i class="fas fa-phone me-1"></i>{{ buyer.phone }}<br />
+                  <i class="fas fa-envelope me-1"></i>{{ buyer.email }}
+                </small>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4">
+        <a
+          href="{{ url_for('view_orders') }}"
+          class="btn btn-outline-secondary"
+        >
+          <i class="fas fa-arrow-left me-1"></i>Back to Orders
+        </a>
+        <a href="{{ url_for('index') }}" class="btn btn-outline-primary ms-2">
+          <i class="fas fa-shopping-bag me-1"></i>Continue Shopping
+        </a>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

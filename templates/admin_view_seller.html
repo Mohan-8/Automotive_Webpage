@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>View Seller - {{ seller.name }} - Spare Parts Marketplace</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <style>
+      .seller-info {
+        background-color: #f8f9fa;
+        padding: 20px;
+        border-radius: 5px;
+      }
+      .table-responsive {
+        overflow-x: auto;
+      }
+      .status-badge {
+        font-size: 0.9rem;
+        padding: 0.35em 0.65em;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container mt-5 mb-5">
+      <h2 class="mb-4">
+        <i class="fas fa-store me-2"></i>Seller Details - {{ seller.name }}
+      </h2>
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div
+        class="alert alert-{{ category }} alert-dismissible fade show"
+        role="alert"
+      >
+        {{ message }}
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="alert"
+          aria-label="Close"
+        ></button>
+      </div>
+      {% endfor %} {% endif %} {% endwith %}
+
+      <div class="row">
+        <div class="col-md-6">
+          <!-- Seller Information -->
+          <div class="seller-info mb-4">
+            <h5>Seller Information</h5>
+            <dl class="row mb-0">
+              <dt class="col-sm-4">Name:</dt>
+              <dd class="col-sm-8">{{ seller.name }}</dd>
+
+              <dt class="col-sm-4">Email:</dt>
+              <dd class="col-sm-8">{{ seller.email }}</dd>
+
+              <dt class="col-sm-4">Phone:</dt>
+              <dd class="col-sm-8">{{ seller.phone }}</dd>
+
+              <dt class="col-sm-4">Address:</dt>
+              <dd class="col-sm-8">{{ seller.address }}</dd>
+
+              <dt class="col-sm-4">Shop Name:</dt>
+              <dd class="col-sm-8">{{ seller.seller_info.shop_name }}</dd>
+
+              <dt class="col-sm-4">Shop Address:</dt>
+              <dd class="col-sm-8">{{ seller.seller_info.shop_address }}</dd>
+
+              <dt class="col-sm-4">GSTIN:</dt>
+              <dd class="col-sm-8">{{ seller.seller_info.gstin }}</dd>
+
+              <dt class="col-sm-4">PAN:</dt>
+              <dd class="col-sm-8">{{ seller.seller_info.pan_number }}</dd>
+
+              <dt class="col-sm-4">Status:</dt>
+              <dd class="col-sm-8">
+                {% if seller.seller_info.is_approved %}
+                <span class="badge bg-success status-badge">Approved</span>
+                {% else %}
+                <span class="badge bg-warning status-badge">Pending</span>
+                {% endif %}
+              </dd>
+            </dl>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <!-- Approval Actions (if pending) -->
+          {% if not seller.seller_info.is_approved %}
+          <div class="card mb-4">
+            <div class="card-body text-center">
+              <h5>Approval Actions</h5>
+              <div class="d-flex justify-content-center gap-2">
+                <a
+                  href="{{ url_for('approve_seller', seller_info_id=seller.seller_info.id) }}"
+                  class="btn btn-success"
+                  onclick="return confirm('Are you sure you want to approve this seller?');"
+                >
+                  <i class="fas fa-check me-1"></i>Approve
+                </a>
+                <a
+                  href="{{ url_for('reject_seller', seller_info_id=seller.seller_info.id) }}"
+                  class="btn btn-danger"
+                  onclick="return confirm('Are you sure you want to reject this seller? This will delete their account.');"
+                >
+                  <i class="fas fa-times me-1"></i>Reject
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Seller Products -->
+      <div class="mt-4">
+        <h4>
+          <i class="fas fa-boxes me-2"></i>Products ({{ seller.products|length
+          }})
+        </h4>
+        {% if seller.products|length == 0 %}
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>This seller has no products
+          listed yet.
+        </div>
+        {% else %}
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>ETA</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for product in seller.products %}
+              <tr>
+                <td>{{ product.name }}</td>
+                <td>
+                  {% if product.category == 'bike' %}
+                  <span class="badge bg-info">Bike Parts</span>
+                  {% else %}
+                  <span class="badge bg-secondary">Car Parts</span>
+                  {% endif %}
+                </td>
+                <td>₹{{ "%.2f"|format(product.price) }}</td>
+                <td>{{ product.stock }}</td>
+                <td>
+                  {{ product.eta }} day{% if product.eta != 1 %}s{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="mt-4">
+        <a
+          href="{{ url_for('admin_profile') }}"
+          class="btn btn-outline-secondary"
+        >
+          <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+        </a>
+      </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

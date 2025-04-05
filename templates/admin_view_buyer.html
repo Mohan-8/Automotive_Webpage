@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Buyer - {{ buyer.name }} - Spare Parts Marketplace</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .buyer-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        .status-badge {
+            font-size: 0.9rem;
+            padding: 0.35em 0.65em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5 mb-5">
+        <h2 class="mb-4">
+            <i class="fas fa-user me-2"></i>Buyer Details - {{ buyer.name }}
+        </h2>
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row">
+            <div class="col-md-6">
+                <!-- Buyer Information -->
+                <div class="buyer-info mb-4">
+                    <h5>Buyer Information</h5>
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Name:</dt>
+                        <dd class="col-sm-8">{{ buyer.name }}</dd>
+                        
+                        <dt class="col-sm-4">Email:</dt>
+                        <dd class="col-sm-8">{{ buyer.email }}</dd>
+                        
+                        <dt class="col-sm-4">Phone:</dt>
+                        <dd class="col-sm-8">{{ buyer.phone }}</dd>
+                        
+                        <dt class="col-sm-4">Address:</dt>
+                        <dd class="col-sm-8">{{ buyer.address }}</dd>
+                        
+                        <dt class="col-sm-4">Role:</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge bg-info status-badge">Buyer</span>
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buyer Orders -->
+        <div class="mt-4">
+            <h4>
+                <i class="fas fa-box me-2"></i>Order History ({{ buyer.orders|length }})
+            </h4>
+            {% if buyer.orders|length == 0 %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>This buyer has not placed any orders yet.
+                </div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in buyer.orders %}
+                                {% set order_total = 0 %}
+                                {% for item in order.items %}
+                                    {% set order_total = order_total + (item.price * item.quantity) %}
+                                {% endfor %}
+                                <tr>
+                                    <td>#{{ order.id }}</td>
+                                    <td>{{ order.order_date.strftime('%d %b, %Y') }}</td>
+                                    <td>{{ order.items|length }}</td>
+                                    <td>₹{{ "%.2f"|format(order_total) }}</td>
+                                    <td>
+                                        {% if order.status == 'pending' %}
+                                            <span class="badge bg-warning status-badge">Pending</span>
+                                        {% elif order.status == 'shipped' %}
+                                            <span class="badge bg-primary status-badge">Shipped</span>
+                                        {% else %}
+                                            <span class="badge bg-success status-badge">Delivered</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('view_order', order_id=order.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i>View
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mt-4">
+            <a href="{{ url_for('admin_profile') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

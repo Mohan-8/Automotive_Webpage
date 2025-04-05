@@ -1,0 +1,145 @@
+<!-- templates/index.html -->
+{% extends "base.html" %} {% block title %}Home - Spare Parts Marketplace{%
+endblock %} {% block content %}
+<div class="jumbotron bg-light p-5 rounded">
+  <h1 class="display-4">Find the Right Parts</h1>
+  <p class="lead">
+    Your one-stop marketplace for quality automotive spare parts
+  </p>
+  <hr class="my-4" />
+  <p>
+    Browse thousands of parts for cars and bikes from verified sellers across
+    the country.
+  </p>
+  <div class="d-flex">
+    <a
+      class="btn btn-primary btn-lg me-2"
+      href="{{ url_for('search') }}"
+      role="button"
+      >Browse Parts</a
+    >
+    {% if not session.user_id %}
+    <a
+      class="btn btn-outline-primary btn-lg"
+      href="{{ url_for('register_seller') }}"
+      role="button"
+      >Become a Seller</a
+    >
+    {% endif %}
+  </div>
+</div>
+
+<div class="my-5">
+  <h2 class="mb-4">Featured Products</h2>
+  <div class="d-flex mb-3 overflow-auto">
+    <div class="category-badge active" data-category="">All</div>
+    <div class="category-badge" data-category="car">Car Parts</div>
+    <div class="category-badge" data-category="bike">Bike Parts</div>
+  </div>
+
+  <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+    {% for product in products %}
+    <div class="col product-item" data-category="{{ product.category }}">
+      <div class="card product-card">
+        {% if product.image %}
+        <img
+          src="{{ url_for('static', filename=product.image) }}"
+          class="card-img-top"
+          alt="{{ product.name }}"
+        />
+        {% else %}
+        <div class="bg-light text-center py-5">
+          <i class="fas fa-image fa-3x text-secondary"></i>
+        </div>
+        {% endif %}
+        <div class="card-body">
+          <h5 class="card-title">{{ product.name }}</h5>
+          <p class="card-text text-truncate">{{ product.description }}</p>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="text-primary fw-bold">₹{{ product.price }}</span>
+            <span class="badge bg-secondary">{{ product.category }}</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <div class="d-grid">
+            <a
+              href="{{ url_for('product_detail', product_id=product.id) }}"
+              class="btn btn-sm btn-outline-primary"
+              >View Details</a
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="row my-5">
+  <div class="col-md-4 mb-4">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="fas fa-car fa-3x mb-3 text-primary"></i>
+        <h5 class="card-title">Wide Selection</h5>
+        <p class="card-text">
+          Thousands of parts for various car and bike models from trusted
+          sellers.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-4">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="fas fa-check-circle fa-3x mb-3 text-primary"></i>
+        <h5 class="card-title">Verified Sellers</h5>
+        <p class="card-text">
+          All sellers are verified to ensure you get genuine parts.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4 mb-4">
+    <div class="card text-center h-100">
+      <div class="card-body">
+        <i class="fas fa-truck fa-3x mb-3 text-primary"></i>
+        <h5 class="card-title">Fast Delivery</h5>
+        <p class="card-text">
+          Get quick delivery estimates and track your orders.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const categoryButtons = document.querySelectorAll(".category-badge");
+    const productItems = document.querySelectorAll(".product-item");
+
+    categoryButtons.forEach((button) => {
+      button.addEventListener("click", function () {
+        // Remove active class from all buttons
+        categoryButtons.forEach((btn) => btn.classList.remove("active"));
+
+        // Add active class to clicked button
+        this.classList.add("active");
+
+        const selectedCategory = this.getAttribute("data-category");
+
+        // Filter products
+        productItems.forEach((item) => {
+          if (
+            selectedCategory === "" ||
+            item.getAttribute("data-category") === selectedCategory
+          ) {
+            item.style.display = "block";
+          } else {
+            item.style.display = "none";
+          }
+        });
+      });
+    });
+  });
+</script>
+{% endblock %}
